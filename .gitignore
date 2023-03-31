@@ -2,3 +2,4 @@ token.pickle
 .DS_Store
 __pycache__
 credentials.json
+.idea/
