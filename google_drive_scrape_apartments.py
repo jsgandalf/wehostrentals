@@ -3,25 +3,38 @@ import pickle
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
 
 # Set up Google Drive API client
 def get_drive_api_client():
     creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
+    try:
+        if os.path.exists('token.pickle'):
+            with open('token.pickle', 'rb') as token:
+                creds = pickle.load(token)
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file('credentials.json',
+                                                                 ['https://www.googleapis.com/auth/drive'])
+                creds = flow.run_local_server(port=0)
+
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(creds, token)
+
+        return build('sheets', 'v4', credentials=creds)
+        # Code to perform the Google Drive upload
+    except HttpError as error:
+        if error.resp.status == 403:
+            # Refresh the access token
+            os.remove('token.pickle')
+            # Rerun the authentication flow and store the new credentials
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', ['https://www.googleapis.com/auth/drive'])
-            creds = flow.run_local_server(port=0)
+            pass
 
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    return build('sheets', 'v4', credentials=creds)
 
 def create_google_sheet(api_client, sheet_name):
     body = {
