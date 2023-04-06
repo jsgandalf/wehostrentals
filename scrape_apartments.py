@@ -26,33 +26,30 @@ def get_apartment_data(base_url, page_number):
         apt_phone_number = None
         apt_phone_number = apt_phone.get_text(strip=True) if apt_phone else None
 
+        if apt_url and not apt_phone_number:
+            data = requests.get(apt_url, headers=headers)
+            detailsoup = BeautifulSoup(data.text, 'lxml')
+            number = detailsoup.select('.phoneNumber')
+            apt_phone_number = number[0].get_text() if number else None
 
-
-        if apt_url:
-            if not apt_phone_number:
-                data = requests.get(apt_url, headers=headers)
-                detailsoup = BeautifulSoup(data.text, 'lxml')
-                number = detailsoup.select('.phoneNumber')
-                apt_phone_number = number[0].get_text() if number else None
-
-        apartments.append({
-            'name': apt_name,
-            'url': apt_url,
-            'phone': apt_phone_number
-        })
+            apartments.append({
+                'name': apt_name,
+                'url': apt_url,
+                'phone': apt_phone_number
+            })
 
     return apartments
 
 
 print("Starting program")
-url = 'https://www.apartments.com/canyonlands-saint-george-ut/'
-number_of_pages = 18
+url = 'https://www.apartments.com/provo-ut/'
+number_of_pages = 8
 apartments = [];
 for page_number in range(1, number_of_pages + 1):
     print(f"--- Page {page_number} ---")
     apartments += get_apartment_data(url, page_number)
 # Create a new Google Sheet and write the data to it
-sheet_name = 'Apartments.com St George Sales Sheet'
+sheet_name = 'Apartments.com Provo, UT Sales Sheet test 2'
 google_drive(apartments, sheet_name)
 
 ## end of program
